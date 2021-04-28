@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+
+#=====================================================#
+# Author      : Pedrovisk <pedrovisk.unix@gmail.com>
+# Program     : CPU_temperature
+# Description :
+#     "CPU_temperature" is program that checks the
+#     temperature of the CPU.
+#=====================================================#
+
+#=========================================#
+printHelp(){
+    cat <<EOF
+Verify the CPU temperature
+Use: $PROGRAM_NAME [TEMPERATURE]
+
+  -v, --version    Show the version and leave  
+  -h, --help       Show this help and leave
+EOF
+exit 0
+}
+
+printErr(){
+    printf '%b' "CPU_temperature: $@.\n" >&2  
+}
+
+printOut(){
+    printf '%b' "$@\n"
+
+}
+#=========================================#
+
+#=========================================#
+colletingArguments(){
+    MAXIMUM_CPU_TEMPERATURE=""
+
+    test "$#" -gt 0
+    local THERE_IS_ARGUMENT="$?"
+
+    while true
+    do
+        if ((THERE_IS_ARGUMENT != 0))
+        then
+            break
+        elif [[ "$1" =~ ^(-h|--help)$ ]]
+        then
+            printHelp
+        elif [[ "$1" =~ ^[0-9]+$ ]]
+        then
+            MAXIMUM_CPU_TEMPERATURE="$1"
+        elif [[ "$1" =~ ^(-v|--version)$ ]]
+        then
+            printOut "$VERSION"
+            exit 0
+        elif (("$#" <= 0))
+        then
+            break
+        fi
+        shift 1
+    done
+}
+
+userInputVerify(){
+    generic_empty_input_check(){
+        if [[ -z "$1" ]]
+        then
+            printErr "$2"
+            exit 1
+        fi
+    }
+
+    the_input_is_void(){
+        generic_empty_input_check "$MAXIMUM_CPU_TEMPERATURE" "Pass a maximum temperature to the script"
+    }
+
+    the_input_is_not_a_number(){
+        if ! [[ "$MAXIMUM_CPU_TEMPERATURE" =~ ^[0-9]+$ ]]
+        then
+            printErr "The input isn't only a number"
+            exit 1
+        fi
+    }
+    
+    THERMAL_ZONE_is_void(){
+        generic_empty_input_check "$THERMAL_ZONE" "The thermal zone of the CPU could not be found"
+    }
+
+    the_input_is_void
+    the_input_is_not_a_number
+    THERMAL_ZONE_is_void
+}
+
+main(){
+    while true
+    do
+        CURRENT_CPU_TEMPERATURE="$(($(cat /sys/class/thermal/thermal_zone$THERMAL_ZONE/temp) / 1000))"
+        printOut "Current temperature: $CURRENT_CPU_TEMPERATUREº"
+
+        if ((CURRENT_CPU_TEMPERATURE >= MAXIMUM_CPU_TEMPERATURE))
+        then
+            notify-send "The CPU temperature has reached the limit of $MAXIMUM_CPU_TEMPERATUREº"
+            exit 0
+        fi
+        sleep 1s
+    done
+}
+#=========================================#
+
+#==================================================#
+# The execution starts here
+#==================================================#
+
+#============================#
+PROGRAM_NAME="${0#*/}"
+VERSION="$PROGRAM_NAME 1.0"
+THERMAL_ZONE="$(
+    TYPE_ZONES=("$(cat /sys/class/thermal/thermal_zone*/type)")
+    COUNTER=0
+    KEY=false
+
+    for TYPE in ${TYPE_ZONES[@]}
+    do
+        if [[ "$TYPE" =~ x86 ]]
+        then
+            KEY=true
+            break
+        else
+            ((COUNTER++))
+        fi
+    done
+    
+    COUNTER_WITHOUT_AN_EXTRA_VALUE="$((COUNTER - 1))"
+    
+    if "$KEY"
+    then
+        echo "$COUNTER_WITHOUT_AN_EXTRA_VALUE"
+    fi
+)"
+#============================#
+
+#============================#
+colletingArguments "$@"
+userInputVerify
+main
+#============================#
