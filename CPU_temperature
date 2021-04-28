@@ -4,8 +4,9 @@
 # Author      : Pedrovisk <pedrovisk.unix@gmail.com>
 # Program     : CPU_temperature
 # Description :
-#     "CPU_temperature" is program that checks the
-#     temperature of the CPU.
+#     Script to check the CPU temperature and alert 
+#     you by a system notification when the 
+#     temperature reaches the limit set by you.
 #=====================================================#
 
 #=========================================#
