@@ -9,7 +9,7 @@
 #     temperature reaches the limit set by you.
 #=====================================================#
 
-#=========================================#
+#==================================================#
 printHelp(){
     cat <<EOF
 Verify the CPU temperature
@@ -21,17 +21,21 @@ EOF
 exit 0
 }
 
+printVersion(){
+    printOut "$VERSION"
+    exit 0
+}
+
 printErr(){
-    printf '%b' "CPU_temperature: $@.\n" >&2  
+    printf '%b' "$PROGRAM_NAME: $@\n" >&2  
 }
 
 printOut(){
     printf '%b' "$@\n"
-
 }
-#=========================================#
+#==================================================#
 
-#=========================================#
+#==================================================#
 colletingArguments(){
     MAXIMUM_CPU_TEMPERATURE=""
 
@@ -51,43 +55,28 @@ colletingArguments(){
             MAXIMUM_CPU_TEMPERATURE="$1"
         elif [[ "$1" =~ ^(-v|--version)$ ]]
         then
-            printOut "$VERSION"
-            exit 0
+            printVersion
         elif (("$#" <= 0))
         then
             break
+        elif (("$#" > 0))
+        then
+            printErr "Unknow option: \"$1\"\nTry \"$PROGRAM_NAME --help\" for more informations."
+            exit 128
         fi
         shift 1
     done
 }
 
 userInputVerify(){
-    generic_empty_input_check(){
-        if [[ -z "$1" ]]
-        then
-            printErr "$2"
-            exit 1
-        fi
-    }
-
-    the_input_is_void(){
-        generic_empty_input_check "$MAXIMUM_CPU_TEMPERATURE" "Pass a maximum temperature to the script"
-    }
-
-    the_input_is_not_a_number(){
-        if ! [[ "$MAXIMUM_CPU_TEMPERATURE" =~ ^[0-9]+$ ]]
-        then
-            printErr "The input isn't only a number"
-            exit 1
-        fi
-    }
-    
     THERMAL_ZONE_is_void(){
-        generic_empty_input_check "$THERMAL_ZONE" "The thermal zone of the CPU could not be found"
+        if [[ -z "$THERMAL_ZONE" ]]
+        then
+            printErr "The thermal zone of the CPU could not be found."
+            exit 1
+        fi
     }
 
-    the_input_is_void
-    the_input_is_not_a_number
     THERMAL_ZONE_is_void
 }
 
@@ -105,17 +94,13 @@ main(){
         sleep 1s
     done
 }
-#=========================================#
-
-#==================================================#
-# The execution starts here
 #==================================================#
 
-#============================#
+#==================================================#
 PROGRAM_NAME="${0#*/}"
 VERSION="$PROGRAM_NAME 1.0"
 THERMAL_ZONE="$(
-    TYPE_ZONES=("$(cat /sys/class/thermal/thermal_zone*/type)")
+    TYPE_ZONES=("$(cat /sys/class/thermal/thermal_zone*/type 2>&-)")
     COUNTER=0
     KEY=false
 
@@ -137,10 +122,14 @@ THERMAL_ZONE="$(
         echo "$COUNTER_WITHOUT_AN_EXTRA_VALUE"
     fi
 )"
-#============================#
+#==================================================#
 
-#============================#
+#==================================================#
+# The execution starts here
+#==================================================#
+
+#========================#
 colletingArguments "$@"
 userInputVerify
 main
-#============================#
+#========================#
