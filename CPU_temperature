@@ -69,14 +69,23 @@ colletingArguments(){
 }
 
 userInputVerify(){
-    THERMAL_ZONE_is_void(){
-        if [[ -z "$THERMAL_ZONE" ]]
+    generic_empty_input_check(){
+        if [[ -z "$1" ]]
         then
-            printErr "The thermal zone of the CPU could not be found."
+            printErr "$2."
             exit 1
         fi
     }
+    
+    the_MAXIUM_CPU_TEMPERATURE_is_void(){
+        generic_empty_input_check "$MAXIMUM_CPU_TEMPERATURE" "Pass a maximum temperature to the script"
+    }
 
+    THERMAL_ZONE_is_void(){
+        generic_empty_input_check "$THERMAL_ZONE" "The thermal zone of the CPU could not be found."
+    }
+
+    the_MAXIUM_CPU_TEMPERATURE_is_void
     THERMAL_ZONE_is_void
 }
 
